@@ -21,9 +21,6 @@ namespace Weapons
 
         [Tooltip("The size of the crosshair image")]
         public int CrosshairSize;
-
-        [Tooltip("The color of the crosshair image")]
-        public Color CrosshairColor;
     }
 
     [RequireComponent(typeof(AudioSource))]
@@ -53,7 +50,8 @@ namespace Weapons
         [Tooltip("The type of weapon wil affect how it shoots")]
         public WeaponShootType ShootType;
 
-        [Tooltip("The projectile prefab")] public ProjectileBase ProjectilePrefab;
+        [Tooltip("The projectile prefab")]
+        public ProjectileBase ProjectilePrefab;
 
         [Tooltip("Minimum duration between two shots")]
         public float DelayBetweenShots = 0.5f;
@@ -78,18 +76,25 @@ namespace Weapons
         [Header("Ammo Parameters")]
         [Tooltip("Should the player manually reload")]
         public bool AutomaticReload = true;
+
         [Tooltip("Has physical clip on the weapon and ammo shells are ejected when firing")]
         public bool HasPhysicalBullets = false;
+
         [Tooltip("Number of bullets in a clip")]
         public int ClipSize = 30;
+
         [Tooltip("Bullet Shell Casing")]
         public GameObject ShellCasing;
+
         [Tooltip("Weapon Ejection Port for physical ammo")]
         public Transform EjectionPort;
+
         [Tooltip("Force applied on the shell")]
         [Range(0.0f, 5.0f)] public float ShellCasingEjectionForce = 2.0f;
+
         [Tooltip("Maximum number of shell that can be spawned before reuse")]
         [Range(1, 30)] public int ShellPoolSize = 1;
+
         [Tooltip("Amount of ammo reloaded per second")]
         public float AmmoReloadRate = 1f;
 
@@ -116,6 +121,9 @@ namespace Weapons
         [Tooltip("Optional weapon animator for OnShoot animations")]
         public Animator WeaponAnimator;
 
+        [Tooltip("Scale of the muzzle flash")]
+        public float MuzzleFlashScale = 1f;
+
         [Tooltip("Prefab of the muzzle flash")]
         public GameObject MuzzleFlashPrefab;
 
@@ -128,7 +136,9 @@ namespace Weapons
         [Tooltip("Sound played when changing to this weapon")]
         public AudioClip ChangeWeaponSfx;
 
-        [Tooltip("Continuous Shooting Sound")] public bool UseContinuousShootSound = false;
+        [Tooltip("Continuous Shooting Sound")]
+        public bool UseContinuousShootSound = false;
+
         public AudioClip ContinuousShootStartSfx;
         public AudioClip ContinuousShootLoopSfx;
         public AudioClip ContinuousShootEndSfx;
@@ -219,7 +229,7 @@ namespace Weapons
 
         void PlaySFX(AudioClip sfx) => AudioUtility.CreateSFX(sfx, transform.position, AudioUtility.AudioGroups.WeaponShoot, 0.0f);
 
-
+        // This is called by the Reload animation event. If it's not called, the weapon will break after realoading.
         void Reload()
         {
             if (_carriedPhysicalBullets > 0)
@@ -462,6 +472,8 @@ namespace Weapons
             {
                 GameObject muzzleFlashInstance = Instantiate(MuzzleFlashPrefab, WeaponMuzzle.position,
                     WeaponMuzzle.rotation, WeaponMuzzle.transform);
+                muzzleFlashInstance.transform.localScale = new Vector3(MuzzleFlashScale, MuzzleFlashScale, MuzzleFlashScale);
+
                 // Unparent the muzzleFlashInstance
                 if (UnparentMuzzleFlash)
                 {

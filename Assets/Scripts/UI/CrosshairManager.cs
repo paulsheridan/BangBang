@@ -51,9 +51,6 @@ namespace UI
                 _crosshairRectTransform.sizeDelta = _currentCrosshair.CrosshairSize * Vector2.one;
             }
 
-            // CrosshairImage.color = Color.Lerp(CrosshairImage.color, _currentCrosshair.CrosshairColor,
-            //     Time.deltaTime * CrosshairUpdateshrpness);
-
             _crosshairRectTransform.sizeDelta = Mathf.Lerp(_crosshairRectTransform.sizeDelta.x,
                 _currentCrosshair.CrosshairSize,
                 Time.deltaTime * CrosshairUpdateshrpness) * Vector2.one;

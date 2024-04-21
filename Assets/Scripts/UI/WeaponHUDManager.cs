@@ -15,7 +15,7 @@ namespace UI
         PlayerWeaponsManager m_PlayerWeaponsManager;
         List<AmmoCounter> m_AmmoCounters = new List<AmmoCounter>();
 
-        void Start()
+        void Awake()
         {
             m_PlayerWeaponsManager = FindObjectOfType<PlayerWeaponsManager>();
             DebugUtility.HandleErrorIfNullFindObject<PlayerWeaponsManager, WeaponHUDManager>(m_PlayerWeaponsManager,

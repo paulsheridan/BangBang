@@ -121,6 +121,33 @@
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
+                },
+                {
+                    "name": "Interact",
+                    "type": "Button",
+                    "id": "78bfef83-ca35-4521-b446-d6b9c734b1dc",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "CycleProjectile",
+                    "type": "Button",
+                    "id": "d5b6f064-f2c9-4474-ada4-9ac5e88798a0",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "PauseGame",
+                    "type": "Button",
+                    "id": "8cff0af1-45ca-4f7d-beb0-708493fc94da",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
                 }
             ],
             "bindings": [
@@ -468,10 +495,10 @@
                 {
                     "name": "negative",
                     "id": "c196d713-0e9b-4c3d-a0d8-40475ea0a726",
-                    "path": "<Keyboard>/q",
+                    "path": "<Mouse>/scroll/down",
                     "interactions": "",
                     "processors": "",
-                    "groups": "Keyboard and Mouse",
+                    "groups": "Keyboard and Mouse;Keyboard And Mouse",
                     "action": "CycleWeapon",
                     "isComposite": false,
                     "isPartOfComposite": true
@@ -479,10 +506,10 @@
                 {
                     "name": "positive",
                     "id": "75414cf5-0172-43e7-8136-b1489bc249d9",
-                    "path": "<Keyboard>/e",
+                    "path": "<Mouse>/scroll/up",
                     "interactions": "",
                     "processors": "",
-                    "groups": "Keyboard and Mouse",
+                    "groups": "Keyboard and Mouse;Keyboard And Mouse",
                     "action": "CycleWeapon",
                     "isComposite": false,
                     "isPartOfComposite": true
@@ -506,6 +533,83 @@
                     "processors": "",
                     "groups": "Gamepad",
                     "action": "AimWeapon",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "913d6680-6267-46fe-891c-678653c43481",
+                    "path": "<Keyboard>/e",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Keyboard And Mouse",
+                    "action": "Interact",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "9e532ec6-967b-4a22-b524-cdf86fe90b22",
+                    "path": "<Gamepad>/buttonWest",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Gamepad",
+                    "action": "Interact",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "1D Axis",
+                    "id": "affd5a2b-7c0f-4eaf-af22-f03d6dcd9383",
+                    "path": "1DAxis",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "CycleProjectile",
+                    "isComposite": true,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "negative",
+                    "id": "77cb55a3-7cb9-4b20-990f-922d585e3671",
+                    "path": "<Keyboard>/q",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Keyboard And Mouse",
+                    "action": "CycleProjectile",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "positive",
+                    "id": "acc176ca-0a1d-4cb9-b075-181896820fe9",
+                    "path": "<Keyboard>/e",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Keyboard And Mouse",
+                    "action": "CycleProjectile",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "",
+                    "id": "ae81a78c-8174-41fc-90bb-263633d29eb9",
+                    "path": "<Gamepad>/start",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Gamepad",
+                    "action": "PauseGame",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "6caa4fff-c6f7-4151-8948-bb0f6e34a97d",
+                    "path": "<Keyboard>/tab",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Keyboard And Mouse",
+                    "action": "PauseGame",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

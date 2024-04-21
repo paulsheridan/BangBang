@@ -4,6 +4,7 @@ using UnityEngine.Events;
 
 namespace AI
 {
+    [DisallowMultipleComponent]
     public class DetectionModule : MonoBehaviour
     {
         [Tooltip("The point representing the source of target-detection raycasts for the enemy AI")]
@@ -21,7 +22,7 @@ namespace AI
         [Tooltip("Optional animator for OnShoot animations")]
         public Animator Animator;
 
-        public float angle = 90f;
+        public float angle = 360f;
 
         public UnityAction onDetectedTarget;
         public UnityAction onLostTarget;
@@ -73,9 +74,8 @@ namespace AI
                         foreach (var hit in hits)
                         {
                             Vector3 directionToTarget = (hit.collider.transform.position - transform.position).normalized;
-                            // Debug.DrawRay(transform.position, directionToTarget * 10, Color.blue, 0.1f);
-                            // Debug.DrawRay(transform.position, transform.forward * 10, Color.green, 0.1f);
-                            // Debug.Log(Vector3.Angle(transform.forward, directionToTarget));
+                            Debug.DrawRay(transform.position, directionToTarget * 10, Color.blue, 0.1f);
+                            Debug.DrawRay(transform.position, transform.forward * 10, Color.green, 0.1f);
                             if (!selfColliders.Contains(hit.collider) && hit.distance < closestValidHit.distance && Vector3.Angle(transform.forward, directionToTarget) < angle / 2)
                             {
                                 closestValidHit = hit;

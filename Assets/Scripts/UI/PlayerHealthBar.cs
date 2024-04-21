@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
-using EasyCharacterMovement;
+using ECM2;
 using Gameplay;
 
 namespace UI

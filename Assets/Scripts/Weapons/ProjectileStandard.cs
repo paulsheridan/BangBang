@@ -5,7 +5,8 @@ using Gameplay;
 namespace Weapons {
     public class ProjectileStandard : ProjectileBase
     {
-        [Header("General")] [Tooltip("Radius of this projectile's collision detection")]
+        [Header("General")]
+        [Tooltip("Radius of this projectile's collision detection")]
         public float Radius = 0.01f;
 
         [Tooltip("Transform representing the root of the projectile (used for accurate collision detection)")]
@@ -18,7 +19,7 @@ namespace Weapons {
         public float MaxLifeTime = 5f;
 
         [Tooltip("VFX prefab to spawn upon impact")]
-        public GameObject ImpactVfx;
+        public GameObject DefaultImpactVfx;
 
         [Tooltip("LifeTime of the VFX before being destroyed")]
         public float ImpactVfxLifetime = 5f;
@@ -32,26 +33,28 @@ namespace Weapons {
         [Tooltip("Layers this projectile can collide with")]
         public LayerMask HittableLayers = -1;
 
-        [Header("Movement")] [Tooltip("Speed of the projectile")]
+        [Header("Movement")]
+        [Tooltip("Speed of the projectile")]
         public float Speed = 20f;
 
         [Tooltip("Downward acceleration from gravity")]
         public float GravityDownAcceleration = 0f;
 
-        [Tooltip(
-            "Distance over which the projectile will correct its course to fit the intended trajectory (used to drift projectiles towards center of screen in First Person view). At values under 0, there is no correction")]
+        [Tooltip("Distance over which the projectile will correct its course to fit the intended trajectory (used to drift projectiles towards center of screen in First Person view). At values under 0, there is no correction")]
         public float TrajectoryCorrectionDistance = -1;
 
         [Tooltip("Determines if the projectile inherits the velocity that the weapon's muzzle had when firing")]
         public bool InheritWeaponVelocity = false;
 
-        [Header("Damage")] [Tooltip("Damage of the projectile")]
+        [Header("Damage")]
+        [Tooltip("Damage of the projectile")]
         public float Damage = 40f;
 
         [Tooltip("Area of damage. Keep empty if you don<t want area damage")]
         public DamageArea AreaOfDamage;
 
-        [Header("Debug")] [Tooltip("Color of the projectile radius debug view")]
+        [Header("Debug")]
+        [Tooltip("Color of the projectile radius debug view")]
         public Color RadiusColor = Color.cyan * 0.2f;
 
         ProjectileBase m_ProjectileBase;
@@ -62,6 +65,7 @@ namespace Weapons {
         Vector3 m_TrajectoryCorrectionVector;
         Vector3 m_ConsumedTrajectoryCorrectionVector;
         List<Collider> m_IgnoredColliders;
+        GameObject _impactableVfx;
 
         const QueryTriggerInteraction k_TriggerInteraction = QueryTriggerInteraction.Collide;
 
@@ -199,10 +203,10 @@ namespace Weapons {
         bool IsHitValid(RaycastHit hit)
         {
             // ignore hits with an ignore component
-            if (hit.collider.GetComponent<IgnoreHitDetection>())
-            {
-                return false;
-            }
+            // if (hit.collider.GetComponent<IgnoreHitDetection>())
+            // {
+            //     return false;
+            // }
 
             // ignore hits with triggers that don't have a Damageable component
             if (hit.collider.isTrigger && hit.collider.GetComponent<Damageable>() == null)
@@ -238,10 +242,24 @@ namespace Weapons {
                 }
             }
 
-            // impact vfx
-            if (ImpactVfx)
+            Impactable impactable = collider.transform.gameObject.GetComponent<Impactable>();
+            if (impactable)
             {
-                GameObject impactVfxInstance = Instantiate(ImpactVfx, point + (normal * ImpactVfxSpawnOffset),
+                _impactableVfx = impactable.GetImpactVfx();
+                if (_impactableVfx)
+                {
+                    GameObject impactVfxInstance = Instantiate(_impactableVfx, point + (normal * ImpactVfxSpawnOffset),
+                        Quaternion.LookRotation(normal));
+                    if (ImpactVfxLifetime > 0)
+                    {
+                        Destroy(impactVfxInstance.gameObject, ImpactVfxLifetime);
+                    }
+                }
+            }
+
+            if (DefaultImpactVfx)
+            {
+                GameObject impactVfxInstance = Instantiate(DefaultImpactVfx, point + (normal * ImpactVfxSpawnOffset),
                     Quaternion.LookRotation(normal));
                 if (ImpactVfxLifetime > 0)
                 {

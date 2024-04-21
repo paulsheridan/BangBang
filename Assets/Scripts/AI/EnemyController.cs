@@ -36,13 +36,8 @@ namespace AI
         [Tooltip("Delay after death where the GameObject is destroyed (to allow for animation)")]
         public float DeathDuration = 0f;
 
-
-        [Header("Weapons Parameters")]
-        [Tooltip("Allow weapon swapping for this enemy")]
-        public bool SwapToNextWeapon = false;
-
-        [Tooltip("Time delay between a weapon swap and the next attack")]
-        public float DelayAfterWeaponSwap = 0f;
+        [Tooltip("Parent transform where all weapon will be added in the hierarchy")]
+        public Transform WeaponParentSocket;
 
         [Header("Eye color")]
         [Tooltip("Material for the eye color")]
@@ -96,10 +91,16 @@ namespace AI
         [Tooltip("Color of the sphere gizmo representing the detection range")]
         public Color DetectionRangeColor = Color.blue;
 
+        [Header("Combat Behavior")]
+        [Tooltip("The time delay between two attacks")]
+        [Range(0, 30)]
+        public float CoolDownTime = 5;
+
         public UnityAction onAttack;
         public UnityAction onDetectedTarget;
         public UnityAction onLostTarget;
         public UnityAction onDamaged;
+        public UnityAction reachedAttackLoc;
 
         List<RendererIndexData> _bodyRenderers = new List<RendererIndexData>();
         MaterialPropertyBlock _bodyFlashMaterialPropertyBlock;
@@ -117,28 +118,22 @@ namespace AI
         public DetectionModule DetectionModule { get; private set; }
 
         int _pathDestinationNodeIndex;
-        EnemyManager _enemyManager;
         ActorsManager _actorsManager;
         Health _health;
         Actor _actor;
         Collider[] _selfColliders;
         GameFlowManager _gameFlowManager;
         bool _wasDamagedThisFrame;
-        float _lastTimeWeaponSwapped = Mathf.NegativeInfinity;
-        int _currentWeaponIndex;
-        WeaponController _currentWeapon;
-        WeaponController[] _weapons;
+        WeaponController _weapon;
         NavigationModule _navigationModule;
+
+        float _timeRemaining;
+        bool _canAttack;
 
         void Start()
         {
-            _enemyManager = FindObjectOfType<EnemyManager>();
-            DebugUtility.HandleErrorIfNullFindObject<EnemyManager, EnemyController>(_enemyManager, this);
-
             _actorsManager = FindObjectOfType<ActorsManager>();
             DebugUtility.HandleErrorIfNullFindObject<ActorsManager, EnemyController>(_actorsManager, this);
-
-            _enemyManager.RegisterEnemy(this);
 
             _health = GetComponent<Health>();
             DebugUtility.HandleErrorIfNullGetComponent<Health, EnemyController>(_health, this, gameObject);
@@ -156,10 +151,7 @@ namespace AI
             _health.OnDie += OnDie;
             _health.OnDamaged += OnDamaged;
 
-            // Find and initialize all weapons
-            FindAndInitializeAllWeapons();
-            var weapon = GetCurrentWeapon();
-            weapon.ShowWeapon(true);
+            GetCurrentWeapon();
 
             var detectionModules = GetComponentsInChildren<DetectionModule>();
             DebugUtility.HandleErrorIfNoComponentFound<DetectionModule, EnemyController>(detectionModules.Length, this,
@@ -233,7 +225,8 @@ namespace AI
             // at every frame, this tests for conditions to kill the enemy
             if (transform.position.y < SelfDestructYHeight)
             {
-                Destroy(gameObject);
+                // Destroy(gameObject);
+                TriggerRespawn();
                 return;
             }
         }
@@ -355,7 +348,7 @@ namespace AI
             // test if the damage source is the player
             if (damageSource && !damageSource.GetComponent<EnemyController>())
             {
-                // pursue the player
+                // pursue the damage source
                 DetectionModule.OnDamaged(damageSource);
                 onDamaged?.Invoke();
                 _lastTimeDamaged = Time.time;
@@ -374,17 +367,19 @@ namespace AI
             var vfx = Instantiate(DeathVfx, DeathVfxSpawnPoint.position, Quaternion.identity);
             Destroy(vfx, 5f);
 
-            // tells the game flow manager to handle the enemy destuction
-            _enemyManager.UnregisterEnemy(this);
-
             // loot an object
             if (TryDropItem())
             {
                 Instantiate(LootPrefab, transform.position, Quaternion.identity);
             }
 
-            // this will call the OnDestroy function
-            Destroy(gameObject, DeathDuration);
+            TriggerRespawn();
+        }
+
+        void TriggerRespawn()
+        {
+            _actorsManager.RespawnActor(this._actor);
+            _health.ResetHealth();
         }
 
         void OnDrawGizmosSelected()
@@ -407,38 +402,36 @@ namespace AI
 
         public void OrientWeaponsTowards(Vector3 lookPosition)
         {
-            for (int i = 0; i < _weapons.Length; i++)
-            {
-                // orient weapon towards player
-                Vector3 weaponForward = (lookPosition - _weapons[i].WeaponRoot.transform.position).normalized;
-                _weapons[i].transform.forward = weaponForward;
-            }
+            Vector3 weaponForward = (lookPosition - _weapon.WeaponRoot.transform.position).normalized;
+            _weapon.transform.forward = weaponForward;
         }
 
-        public bool TryAtack(Vector3 enemyPosition)
+        public bool TryAttack(Vector3 enemyPosition)
         {
             if (_gameFlowManager.GameIsEnding)
                 return false;
 
             OrientWeaponsTowards(enemyPosition);
 
-            if ((_lastTimeWeaponSwapped + DelayAfterWeaponSwap) >= Time.time)
-                return false;
+            bool didFire = false;
 
-            // Shoot the weapon
-            bool didFire = GetCurrentWeapon().HandleShootInputs(false, true, false);
-
-            if (didFire && onAttack != null)
+            if (_canAttack)
             {
-                onAttack?.Invoke();
+                // Shoot the weapon
+                didFire = _weapon.HandleShootInputs(false, true, false);
 
-                if (SwapToNextWeapon && _weapons.Length > 1)
+                if (didFire && onAttack != null)
                 {
-                    int nextWeaponIndex = (_currentWeaponIndex + 1) % _weapons.Length;
-                    SetCurrentWeapon(nextWeaponIndex);
+                    onAttack?.Invoke();
                 }
             }
+            _timeRemaining -= Time.deltaTime;
 
+            if (_timeRemaining <= 0)
+            {
+                _canAttack = !_canAttack;
+                _timeRemaining = CoolDownTime;
+            }
             return didFire;
         }
 
@@ -452,50 +445,15 @@ namespace AI
                 return (Random.value <= DropRate);
         }
 
-        void FindAndInitializeAllWeapons()
-        {
-            // Check if we already found and initialized the weapons
-            if (_weapons == null)
-            {
-                _weapons = GetComponentsInChildren<WeaponController>();
-                DebugUtility.HandleErrorIfNoComponentFound<WeaponController, EnemyController>(_weapons.Length, this,
-                    gameObject);
-
-                for (int i = 0; i < _weapons.Length; i++)
-                {
-                    _weapons[i].Owner = gameObject;
-                }
-            }
-        }
-
         public WeaponController GetCurrentWeapon()
         {
-            FindAndInitializeAllWeapons();
-            // Check if no weapon is currently selected
-            if (_currentWeapon == null)
+            // Check if we already found and initialized the weapons
+            if (_weapon == null)
             {
-                // Set the first weapon of the weapons list as the current weapon
-                SetCurrentWeapon(0);
+                _weapon = GetComponentInChildren<WeaponController>();
             }
-
-            DebugUtility.HandleErrorIfNullGetComponent<WeaponController, EnemyController>(_currentWeapon, this,
-                gameObject);
-
-            return _currentWeapon;
-        }
-
-        void SetCurrentWeapon(int index)
-        {
-            _currentWeaponIndex = index;
-            _currentWeapon = _weapons[_currentWeaponIndex];
-            if (SwapToNextWeapon)
-            {
-                _lastTimeWeaponSwapped = Time.time;
-            }
-            else
-            {
-                _lastTimeWeaponSwapped = Mathf.NegativeInfinity;
-            }
+            _weapon.Owner = gameObject;
+            return _weapon;
         }
     }
 }

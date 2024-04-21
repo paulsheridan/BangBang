@@ -18,8 +18,12 @@ namespace AI
         [Range(0f, 1f)]
         public float AttackStopDistanceRatio = 0.5f;
 
+        public float PatrolSpeed = 2f;
+        public float AttackSpeed = 4f;
+        public float AttackLocRange = 4f;
+
         [Tooltip("The random hit damage effects")]
-        public ParticleSystem[] RandomHitSparks;
+        public ParticleSystem[] OnHitVfx;
 
         public ParticleSystem[] OnDetectVfx;
         public AudioClip OnDetectSfx;
@@ -30,6 +34,7 @@ namespace AI
         public AIState AiState { get; private set; }
         EnemyController _enemyController;
         AudioSource _audioSource;
+        bool _reachedDestination = true;
 
         const string k_AnimMoveSpeedParameter = "MoveSpeed";
         const string k_AnimAttackParameter = "Attack";
@@ -66,11 +71,7 @@ namespace AI
             float moveSpeed = _enemyController.NavMeshAgent.velocity.magnitude;
 
             // Update animator speed parameter
-            // Animator.SetFloat(k_AnimMoveSpeedParameter, moveSpeed);
-
-            // changing the pitch of the movement sound depending on the movement speed
-            // _audioSource.pitch = Mathf.Lerp(PitchDistortionMovementSpeed.Min, PitchDistortionMovementSpeed.Max,
-            //     moveSpeed / _enemyController.NavMeshAgent.speed);
+            Animator.SetFloat(k_AnimMoveSpeedParameter, moveSpeed);
         }
 
         void UpdateAiStateTransitions()
@@ -85,7 +86,6 @@ namespace AI
                         AiState = AIState.Attack;
                         _enemyController.SetNavDestination(transform.position);
                     }
-
                     break;
                 case AIState.Attack:
                     // Transition to follow when no longer a target in attack range
@@ -93,7 +93,6 @@ namespace AI
                     {
                         AiState = AIState.Follow;
                     }
-
                     break;
             }
         }
@@ -106,11 +105,13 @@ namespace AI
                 case AIState.Patrol:
                     _enemyController.UpdatePathDestination();
                     _enemyController.SetNavDestination(_enemyController.GetDestinationOnPath());
+                    _enemyController.NavMeshAgent.speed = PatrolSpeed;
                     break;
                 case AIState.Follow:
                     _enemyController.SetNavDestination(_enemyController.KnownDetectedTarget.transform.position);
                     _enemyController.OrientTowards(_enemyController.KnownDetectedTarget.transform.position);
                     _enemyController.OrientWeaponsTowards(_enemyController.KnownDetectedTarget.transform.position);
+                    _enemyController.NavMeshAgent.speed = AttackSpeed;
                     break;
                 case AIState.Attack:
                     if (Vector3.Distance(_enemyController.KnownDetectedTarget.transform.position,
@@ -121,18 +122,18 @@ namespace AI
                     }
                     else
                     {
+                        // FindAttackDestination();
                         _enemyController.SetNavDestination(transform.position);
                     }
-
                     _enemyController.OrientTowards(_enemyController.KnownDetectedTarget.transform.position);
-                    _enemyController.TryAtack(_enemyController.KnownDetectedTarget.transform.position);
+                    _enemyController.TryAttack(_enemyController.KnownDetectedTarget.transform.position);
                     break;
             }
         }
 
         void OnAttack()
         {
-            // Animator.SetTrigger(k_AnimAttackParameter);
+            Animator.SetTrigger(k_AnimAttackParameter);
         }
 
         void OnDetectedTarget()
@@ -152,7 +153,7 @@ namespace AI
                 AudioUtility.CreateSFX(OnDetectSfx, transform.position, AudioUtility.AudioGroups.EnemyDetection, 1f);
             }
 
-            // Animator.SetBool(k_AnimAlertedParameter, true);
+            Animator.SetBool(k_AnimAlertedParameter, true);
         }
 
         void OnLostTarget()
@@ -167,18 +168,48 @@ namespace AI
                 OnDetectVfx[i].Stop();
             }
 
-            // Animator.SetBool(k_AnimAlertedParameter, false);
+            Animator.SetBool(k_AnimAlertedParameter, false);
         }
 
         void OnDamaged()
         {
-            if (RandomHitSparks.Length > 0)
+            if (OnHitVfx.Length > 0)
             {
-                int n = Random.Range(0, RandomHitSparks.Length - 1);
-                RandomHitSparks[n].Play();
+                int n = Random.Range(0, OnHitVfx.Length - 1);
+                OnHitVfx[n].Play();
+            }
+            _reachedDestination = false;
+
+            Animator.SetTrigger(k_AnimOnDamagedParameter);
+        }
+
+        void FindAttackDestination()
+        {
+            Vector3 point;
+            if (_reachedDestination == true)
+            {
+                if (RandomPoint(transform.position, AttackLocRange, out point))
+                {
+                    Debug.DrawRay(point, Vector3.up, Color.blue, 1.0f);
+                    _enemyController.SetNavDestination(point);
+                    _reachedDestination = false;
+                }
+            }
+        }
+
+        bool RandomPoint(Vector3 center, float range, out Vector3 result)
+        {
+
+            Vector3 randomPoint = center + Random.insideUnitSphere * range;
+            UnityEngine.AI.NavMeshHit hit;
+            if (UnityEngine.AI.NavMesh.SamplePosition(randomPoint, out hit, 1.0f, UnityEngine.AI.NavMesh.AllAreas))
+            {
+                result = hit.position;
+                return true;
             }
 
-            // Animator.SetTrigger(k_AnimOnDamagedParameter);
+            result = Vector3.zero;
+            return false;
         }
     }
 }

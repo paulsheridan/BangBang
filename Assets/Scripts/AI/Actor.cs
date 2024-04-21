@@ -30,4 +30,9 @@ public class Actor : MonoBehaviour
             m_ActorsManager.Actors.Remove(this);
         }
     }
+
+    public int GetAffiliation()
+    {
+        return Affiliation;
+    }
 }

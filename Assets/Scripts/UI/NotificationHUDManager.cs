@@ -19,10 +19,6 @@ namespace UI
                 this);
             playerWeaponsManager.OnAddedWeapon += OnPickupWeapon;
 
-            // Jetpack jetpack = FindObjectOfType<Jetpack>();
-            // DebugUtility.HandleErrorIfNullFindObject<Jetpack, NotificationHUDManager>(jetpack, this);
-            // jetpack.OnUnlockJetpack += OnUnlockJetpack;
-
             EventManager.AddListener<ObjectiveUpdateEvent>(OnObjectiveUpdateEvent);
         }
 

@@ -33,7 +33,7 @@ public class PixelizePass : ScriptableRenderPass
 
     public override void OnCameraSetup(CommandBuffer cmd, ref RenderingData renderingData)
     {
-        colorBuffer = renderingData.cameraData.renderer.cameraColorTarget;
+        colorBuffer = renderingData.cameraData.renderer.cameraColorTargetHandle;
         RenderTextureDescriptor descriptor = renderingData.cameraData.cameraTargetDescriptor;
 
         pixelScreenHeight = settings.screenHeight;
